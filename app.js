@@ -2,6 +2,9 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const graphqlHttp= require('express-graphql');
 const {buildSchema }=require('graphql');
+const mongoose=require('mongoose');
+const EventsList=require('./models/event').eventCollection;
+
 const app= express();
 
 const events=[];
@@ -40,23 +43,33 @@ app.use('/graphql',graphqlHttp({
 	`),
 	rootValue:{
 		events:()=>{
-			return events;
+			return EventsList.find().then((result)=>{
+				return result;
+			}).catch(err=> console.log(err));
 		},
 
 		createEvent:(args)=>{
-			const event={
-				_id:Math.random().toString(),
-				title:args.eventInput.title,
-				desc:args.eventInput.desc,
-				price:+args.eventInput.price
-			};
-			// console.log(event);
-			events.push(event);
-			return event
+
+			const event=new EventsList();
+
+				event.title=args.eventInput.title;
+				event.desc=args.eventInput.desc;
+				event.price=+args.eventInput.price;
+
+				return event.save().then((result)=>{
+					// return ({...result._doc});
+					return result;
+				}).catch(err=>console.log(err));
 		}
 	},
 	graphiql:true
 }));
 
-app.listen(3000);
+mongoose.connect('mongodb+srv://graphqlAdmin:graphqlAdmin007@cluster0-zu9q5.mongodb.net/graphqldb?retryWrites=true&w=majority')
+.then(()=>{
+	app.listen(3000);	
+})
+.catch(err=>console.log(err));
+
 console.log("Server Listening on PORT 3000");
+//mongoose mongo  connection String : mongodb+srv://graphqlAdmin:graphqlAdmin007@cluster0-zu9q5.mongodb.net/graphqldb?retryWrites=true&w=majority
